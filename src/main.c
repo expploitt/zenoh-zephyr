@@ -9,6 +9,7 @@
 
 #include <zephyr.h>
 #include <stdio.h>
+#include "zenoh-pico.h"
 
 #include "zenoh-pico/net.h"
 
