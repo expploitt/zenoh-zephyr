@@ -12,15 +12,27 @@
  *   ADLINK zenoh team, <zenoh@adlink-labs.tech>
  */
 
+#if (ZENOH_ZEPHYR == 1)
+//#include <posix/arpa/inet.h>
+//#include <ifaddrs.h>
+//#include <posix/netdb.h>
+//#include <posix/net/if.h>
+#include <net/socket.h>
+#include <posix/unistd.h>
+
+#else
 #include <arpa/inet.h>
-#include <errno.h>
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <net/if.h>
+#include <unistd.h>
+#endif
+
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+
 #include "zenoh-pico/net/private/system.h"
 #include "zenoh-pico/private/logging.h"
 
@@ -141,6 +153,7 @@ _zn_socket_result_t _zn_create_udp_socket(const char *addr, int port, int timeou
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = timeout_usec;
+
     if (setsockopt(r.value.socket, SOL_SOCKET, SO_RCVTIMEO, (void *)&timeout, sizeof(struct timeval)) == -1)
     {
         r.tag = _z_res_t_ERR;
@@ -168,15 +181,30 @@ _zn_socket_result_t _zn_open_tx_session(const char *locator)
     r.tag = _z_res_t_OK;
     char *l = strdup(locator);
     _Z_DEBUG_VA("Connecting to: %s:\n", locator);
+#if (ZENOH_ZEPHYR == 1)
+    char *tx_save = NULL;
+    char *tx = strtok_r(l, "/", &tx_save);
+#else
     char *tx = strtok(l, "/");
+#endif
+    
     if (strcmp(tx, "tcp") != 0)
     {
         fprintf(stderr, "Locator provided is not for TCP\n");
         exit(1);
     }
+
+#if (ZENOH_ZEPHYR == 1)
+
+    char *addr_name_save = NULL;
+    char *s_port_save = NULL;
+
+    char *addr_name = strdup(strtok_r(NULL, ":", &addr_name_save));
+    char *s_port = strtok_r(NULL, ":", &s_port_save);
+#else 
     char *addr_name = strdup(strtok(NULL, ":"));
     char *s_port = strtok(NULL, ":");
-
+#endif
     int status;
     char ip_addr[INET6_ADDRSTRLEN];
     struct sockaddr_in *remote;

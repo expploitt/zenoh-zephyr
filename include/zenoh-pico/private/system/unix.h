@@ -15,7 +15,11 @@
 #ifndef _ZENOH_PICO_UNIX_TYPES_H
 #define _ZENOH_PICO_UNIX_TYPES_H
 
+#if (ZENOH_ZEPHYR == 1)
+#include <posix/pthread.h>
+#else
 #include <pthread.h>
+#endif
 
 typedef pthread_t _z_task_t;
 typedef pthread_attr_t _z_task_attr_t;

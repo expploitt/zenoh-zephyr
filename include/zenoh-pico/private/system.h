@@ -15,7 +15,7 @@
 #ifndef _ZENOH_PICO_SYSTEM_H
 #define _ZENOH_PICO_SYSTEM_H
 
-#if (ZENOH_LINUX == 1) || (ZENOH_MACOS == 1)
+#if (ZENOH_LINUX == 1) || (ZENOH_MACOS == 1) || (ZENOH_ZEPHYR == 1)
 #include "zenoh-pico/private/system/unix.h"
 #elif (ZENOH_CONTIKI == 1)
 #include "zenoh-pico/private/contiki/types.h"
@@ -46,9 +46,16 @@ int _z_sleep_s(unsigned int time);
 
 /*------------------ Clock ------------------*/
 _z_clock_t _z_clock_now(void);
+
+#if (ZENOH_ZEPHYR == 1)
+clockid_t _z_clock_elapsed_us(_z_clock_t *time);
+clockid_t _z_clock_elapsed_ms(_z_clock_t *time);
+clockid_t _z_clock_elapsed_s(_z_clock_t *time);
+#else
 clock_t _z_clock_elapsed_us(_z_clock_t *time);
 clock_t _z_clock_elapsed_ms(_z_clock_t *time);
 clock_t _z_clock_elapsed_s(_z_clock_t *time);
+#endif
 
 /*------------------ Time ------------------*/
 _z_time_t _z_time_now(void);

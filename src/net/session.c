@@ -173,7 +173,11 @@ zn_hello_array_t _zn_scout_loop(
     const _z_wbuf_t *wbf,
     const struct sockaddr *dest,
     socklen_t salen,
-    clock_t period,
+#if (ZENOH_ZEPHYR == 1)
+    clockid_t period,
+#else
+    clock_id period,
+#endif
     int exit_on_first)
 {
     // Define an empty array
@@ -310,9 +314,16 @@ zn_hello_array_t _zn_scout(unsigned int what, zn_properties_t *config, unsigned 
 
     // Scout on multicast
     z_str_t sock_addr = strdup(zn_properties_get(config, ZN_CONFIG_MULTICAST_ADDRESS_KEY).val);
-    z_str_t ip_addr = strtok(sock_addr, ":");
-    int port_num = atoi(strtok(NULL, ":"));
+    #if (ZENOH_ZEPHYR == 1)
+    char *ip_addr_save = NULL;
+    z_str_t ip_addr = strtok_r(sock_addr, ":", &ip_addr_save);
 
+    char *port_num_save = NULL;
+    int port_num = atoi(strtok_r(NULL, ":", &port_num_save));
+#else
+    z_str_t ip_addr = strtok(sock_addr, ":");
+    int port_num = atoi(strtok_r(NULL, ":"));
+#endif
     struct sockaddr_in *maddr = _zn_make_socket_address(ip_addr, port_num);
     socklen_t salen = sizeof(struct sockaddr_in);
     locs = _zn_scout_loop(r.value.socket, &wbf, (struct sockaddr *)maddr, salen, scout_period, exit_on_first);
@@ -757,7 +768,13 @@ zn_session_t *zn_open(zn_properties_t *config)
         }
         // The ZN_CONFIG_SCOUTING_TIMEOUT_KEY is expressed in seconds as a float while the
         // scout loop timeout uses milliseconds granularity
+
+        /*TODO, implement strtof in zephyr, now for compile it's used long*/
+    #if (ZENOH_ZEPHYR == 1)
+        clockid_t timeout = (clockid_t)1000 * (float)strtol(to, NULL, 10);
+    #else
         clock_t timeout = (clock_t)1000 * strtof(to, NULL);
+    #endif
         // Scout and return upon the first result
         zn_hello_array_t locs = _zn_scout(what, config, timeout, 1);
         if (locs.len > 0)
