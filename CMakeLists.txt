@@ -4,6 +4,10 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(external_lib)
 
+
+add_definitions("-DZENOH_ZEPHYR=1")
+add_definitions("-DZENOH_DEBUG=2")
+
 target_sources(app PRIVATE src/main.c)
 
 # The external static library that we are linking with does not know
@@ -54,16 +58,19 @@ ExternalProject_Add(
   AR=${CMAKE_AR}
   CFLAGS=${external_project_cflags}
   INSTALL_COMMAND ""      # This particular build system has no install command
-  BUILD_BYPRODUCTS ${MYLIB_LIB_DIR}/libmylib.a
+  BUILD_BYPRODUCTS ${MYLIB_LIB_DIR}/libzenohpicolib.a
   )
 
 # Create a wrapper CMake library that our app can link with
 add_library(mylib_lib STATIC IMPORTED GLOBAL)
+
 add_dependencies(
   mylib_lib
   mylib_project
+  DEPENDS zephyr_interface
   )
-set_target_properties(mylib_lib PROPERTIES IMPORTED_LOCATION             ${MYLIB_LIB_DIR}/libmylib.a)
+  
+set_target_properties(mylib_lib PROPERTIES IMPORTED_LOCATION             ${MYLIB_LIB_DIR}/libzenohpicolib.a)
 set_target_properties(mylib_lib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${MYLIB_INCLUDE_DIR})
 
 target_link_libraries(app PUBLIC mylib_lib)
